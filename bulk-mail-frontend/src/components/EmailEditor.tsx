@@ -12,7 +12,6 @@ import {
   Box,
   Snackbar,
   Alert,
-  TextField,
 } from "@mui/material";
 
 // Dynamic import for Unlayer editor (no SSR)
@@ -38,7 +37,7 @@ interface SnackbarState {
   severity: "success" | "error";
 }
 
-const EmailEditorComponent = () => {
+const TemplateEditorComponent = () => {
   const editorRef = useRef<any>(null);
   const [isEditorLoading, setIsEditorLoading] = useState(true);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -49,9 +48,8 @@ const EmailEditorComponent = () => {
     message: "",
     severity: "success",
   });
-  const [recipients, setRecipients] = useState("");
-  const [subject, setSubject] = useState("");
 
+  // Fetch templates on mount
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -169,9 +167,10 @@ const EmailEditorComponent = () => {
     }
   }, [selectedTemplateId]);
 
-  const exportTemplate = useCallback(async () => {
+  const saveNewTemplate = useCallback(async () => {
     const template = templates.find((t) => t.id === Number(selectedTemplateId));
-    const name = prompt("Enter template name", template?.name || "email-template");
+    const defaultName = template?.name || "email-template";
+    const name = prompt("Enter template name", defaultName);
     if (!name) {
       setSnackbar({ open: true, message: "Name required", severity: "error" });
       return;
@@ -194,79 +193,75 @@ const EmailEditorComponent = () => {
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         const saved: Template = await res.json();
-        setTemplates((prev) => [...prev.filter((t) => t.id !== saved.id), saved]);
-        setSnackbar({ open: true, message: "Template saved", severity: "success" });
+        setTemplates((prev) => [...prev, saved]);
+        setSnackbar({ open: true, message: "New template saved", severity: "success" });
       });
     } catch (error: any) {
-      console.error("Export failed:", error);
+      console.error("Save new template failed:", error);
       setSnackbar({ open: true, message: `Save failed: ${error.message}`, severity: "error" });
     }
-  }, [selectedTemplateId, templates]);
+  }, [templates, selectedTemplateId]);
 
-  const sendBulkEmails = useCallback(async () => {
+  const updateTemplate = useCallback(async () => {
     if (!selectedTemplateId) {
-      setSnackbar({ open: true, message: "Select a template", severity: "error" });
-      return;
-    }
-    if (!recipients) {
-      setSnackbar({ open: true, message: "Enter recipient emails", severity: "error" });
-      return;
-    }
-    if (!subject) {
-      setSnackbar({ open: true, message: "Enter email subject", severity: "error" });
+      setSnackbar({ open: true, message: "Select a template to update", severity: "error" });
       return;
     }
 
-    const recipientList = recipients.split(",").map((email) => email.trim()).filter((email) => email);
-    if (recipientList.length === 0) {
-      setSnackbar({ open: true, message: "No valid recipients provided", severity: "error" });
+    const template = templates.find((t) => t.id === Number(selectedTemplateId));
+    const defaultName = template?.name || "email-template";
+    const name = prompt("Enter template name", defaultName);
+    if (!name) {
+      setSnackbar({ open: true, message: "Name required", severity: "error" });
       return;
     }
 
     try {
-      // Export HTML from Unlayer editor
-      const exportPromise = new Promise((resolve, reject) => {
-        editorRef.current?.editor?.exportHtml(({ html }: { html: string }) => {
-          resolve(html);
-        }, (error: any) => {
-          reject(error);
+      editorRef.current?.editor?.exportHtml(async ({ design }: { design: Design }) => {
+        const res = await fetch(`http://localhost:8080/api/templates/${selectedTemplateId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, design }),
         });
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        const updated: Template = await res.json();
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === updated.id ? updated : t))
+        );
+        setSnackbar({ open: true, message: "Template updated", severity: "success" });
       });
+    } catch (error: any) {
+      console.error("Update template failed:", error);
+      setSnackbar({ open: true, message: `Update failed: ${error.message}`, severity: "error" });
+    }
+  }, [selectedTemplateId, templates]);
 
-      const htmlContent = await exportPromise;
+  const deleteTemplate = useCallback(async () => {
+    if (!selectedTemplateId) {
+      setSnackbar({ open: true, message: "Select a template to delete", severity: "error" });
+      return;
+    }
 
-      const res = await fetch("http://localhost:8080/api/email/send-bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          templateId: Number(selectedTemplateId),
-          recipients: recipientList,
-          subject,
-          htmlContent,
-        }),
+    if (!window.confirm("Are you sure you want to delete this template?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/templates/${selectedTemplateId}`, {
+        method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-      const result = await res.json();
-      setSnackbar({ open: true, message: result, severity: "success" });
+      setTemplates((prev) => prev.filter((t) => t.id !== Number(selectedTemplateId)));
+      setSelectedTemplateId("");
+      setSnackbar({ open: true, message: "Template deleted", severity: "success" });
     } catch (error: any) {
-      console.error("Bulk email sending failed:", error);
-      setSnackbar({ open: true, message: `Send failed: ${error.message}`, severity: "error" });
+      console.error("Delete template failed:", error);
+      setSnackbar({ open: true, message: `Delete failed: ${error.message}`, severity: "error" });
     }
-  }, [selectedTemplateId, recipients, subject]);
+  }, [selectedTemplateId]);
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        p: 4,
-        gap: 2,
-        width: "100%",
-        maxWidth: 1280,
-      }}
-    >
-      <h1 style={{ fontSize: "1.5rem" }}>Unlayer Email Editor</h1>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {isEditorLoading && <CircularProgress />}
       <FormControl sx={{ minWidth: 200 }}>
         <InputLabel>Select Template</InputLabel>
@@ -285,34 +280,23 @@ const EmailEditorComponent = () => {
           ))}
         </Select>
       </FormControl>
-      <Button
-        variant="contained"
-        onClick={loadTemplate}
-        disabled={!selectedTemplateId || isFetching}
-      >
-        {isFetching ? <CircularProgress size={24} /> : "Load Template"}
-      </Button>
-      <TextField
-        label="Recipient Emails (comma-separated)"
-        value={recipients}
-        onChange={(e) => setRecipients(e.target.value)}
-        fullWidth
-        sx={{ maxWidth: 600 }}
-      />
-      <TextField
-        label="Email Subject"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        fullWidth
-        sx={{ maxWidth: 600 }}
-      />
-      <Button
-        variant="contained"
-        onClick={sendBulkEmails}
-        disabled={!selectedTemplateId || isFetching}
-      >
-        Send Bulk Emails
-      </Button>
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <Button
+          variant="contained"
+          onClick={loadTemplate}
+          disabled={!selectedTemplateId || isFetching}
+        >
+          {isFetching ? <CircularProgress size={24} /> : "Load Template"}
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={deleteTemplate}
+          disabled={!selectedTemplateId}
+        >
+          Delete Template
+        </Button>
+      </Box>
       <Box sx={{ width: "100%", height: 600, border: "1px solid #ccc" }}>
         <EmailEditor
           ref={editorRef}
@@ -325,9 +309,18 @@ const EmailEditorComponent = () => {
           }}
         />
       </Box>
-      <Button variant="contained" onClick={exportTemplate}>
-        Export & Save
-      </Button>
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <Button variant="contained" onClick={saveNewTemplate}>
+          Save New Template
+        </Button>
+        <Button
+          variant="contained"
+          onClick={updateTemplate}
+          disabled={!selectedTemplateId}
+        >
+          Update Template
+        </Button>
+      </Box>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -339,4 +332,4 @@ const EmailEditorComponent = () => {
   );
 };
 
-export default dynamic(() => Promise.resolve(EmailEditorComponent), { ssr: false });
+export default dynamic(() => Promise.resolve(TemplateEditorComponent), { ssr: false });
