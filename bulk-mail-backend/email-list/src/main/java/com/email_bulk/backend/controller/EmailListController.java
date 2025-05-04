@@ -42,6 +42,7 @@ public class EmailListController {
     @GetMapping("/{id}")
     public ResponseEntity<EmailListDTO.EmailListResponseDTO> getEmailList(@PathVariable Long id) {
         try {
+            System.out.println(id);
             EmailList emailList = emailListService.getEmailList(id);
             EmailListDTO.EmailListResponseDTO response = new EmailListDTO.EmailListResponseDTO(
                     emailList.getId(), emailList.getName(), emailList.getRecipients());

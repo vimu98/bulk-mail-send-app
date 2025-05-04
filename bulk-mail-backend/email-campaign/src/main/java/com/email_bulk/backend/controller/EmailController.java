@@ -13,14 +13,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/email")
 public class EmailController {
 
-    private final TemplateService templateService;
-    private final EmailListService emailListService;
     private final EmailCampaignService campaignService;
 
-    public EmailController(TemplateService templateService, EmailListService emailListService,
-                           EmailCampaignService campaignService) {
-        this.templateService = templateService;
-        this.emailListService = emailListService;
+    public EmailController(EmailCampaignService campaignService) {
         this.campaignService = campaignService;
     }
 
@@ -29,10 +24,8 @@ public class EmailController {
             @Valid @RequestBody EmailSendDTO.SendBulkRequestDTO request) {
         try {
 
-            EmailList emailList = emailListService.getEmailList(request.getEmailListId());
-
             EmailCampaign campaign = campaignService.recordCampaign(
-                    request.getTemplateId(), request.getEmailListId(), request.getSubject(), request.getHtmlContent(), emailList);
+                    request.getTemplateId(), request.getEmailListId(), request.getSubject(), request.getHtmlContent());
 
             EmailSendDTO.SendBulkResponseDTO response = new EmailSendDTO.SendBulkResponseDTO(
                     "Emails sent and campaign recorded with ID: " + campaign.getId());

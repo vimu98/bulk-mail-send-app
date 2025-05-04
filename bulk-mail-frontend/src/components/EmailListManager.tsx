@@ -48,7 +48,7 @@ const EmailListManager = () => {
   useEffect(() => {
     const fetchEmailLists = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/email-lists", {
+        const res = await fetch("http://localhost:8081/api/email-lists", {
           headers: { "Content-Type": "application/json" },
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -91,8 +91,8 @@ const EmailListManager = () => {
 
     const emailList = { name, recipients: recipientList };
     const url = editId
-      ? `http://localhost:8080/api/email-lists/${editId}`
-      : "http://localhost:8080/api/email-lists";
+      ? `http://localhost:8081/api/email-lists/${editId}`
+      : "http://localhost:8081/api/email-lists";
     const method = editId ? "PUT" : "POST";
 
     try {
@@ -138,7 +138,7 @@ const EmailListManager = () => {
   // Handle delete
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/email-lists/${id}`, {
+      const res = await fetch(`http://localhost:8081/api/email-lists/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);

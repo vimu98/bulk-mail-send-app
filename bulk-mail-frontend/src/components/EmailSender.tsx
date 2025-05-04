@@ -68,7 +68,7 @@ const EmailSenderComponent = () => {
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/templates', {
+        const res = await fetch('http://localhost:8082/api/templates', {
           headers: { 'Content-Type': 'application/json' },
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -86,7 +86,7 @@ const EmailSenderComponent = () => {
 
     const fetchEmailLists = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/email-lists', {
+        const res = await fetch('http://localhost:8081/api/email-lists', {
           headers: { 'Content-Type': 'application/json' },
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -121,7 +121,7 @@ const EmailSenderComponent = () => {
 
     const fetchAndConvertTemplate = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/templates/${selectedTemplateId}`, {
+        const res = await fetch(`http://localhost:8082/api/templates/${selectedTemplateId}`, {
           headers: { Accept: 'application/json' },
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
