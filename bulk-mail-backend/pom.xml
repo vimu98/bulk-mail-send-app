@@ -21,6 +21,7 @@
     <module>email-campaign</module>
       <module>service-discovery</module>
       <module>api-gateway</module>
+      <module>api-gateway</module>
   </modules>
 
   <properties>

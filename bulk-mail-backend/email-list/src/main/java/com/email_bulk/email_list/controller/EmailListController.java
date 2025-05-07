@@ -4,6 +4,7 @@ import com.email_bulk.email_list.dto.EmailListDTO;
 import com.email_bulk.email_list.entity.EmailList;
 import com.email_bulk.email_list.service.EmailListService;
 import jakarta.validation.Valid;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +39,7 @@ public class EmailListController {
                     .body(new EmailListDTO.EmailListResponseDTO(null, null, null, "Failed to create email list"));
         }
     }
-
+    @LoadBalanced
     @GetMapping("/{id}")
     public ResponseEntity<EmailListDTO.EmailListResponseDTO> getEmailList(@PathVariable Long id) {
         try {
@@ -52,7 +53,7 @@ public class EmailListController {
                     .body(new EmailListDTO.EmailListResponseDTO(null, null, null, e.getMessage()));
         }
     }
-
+    @LoadBalanced
     @GetMapping
     public ResponseEntity<List<EmailListDTO.EmailListResponseDTO>> getAllEmailLists() {
         try {

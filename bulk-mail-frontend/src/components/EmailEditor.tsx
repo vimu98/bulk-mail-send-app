@@ -13,6 +13,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { log } from "console";
 
 // Dynamic import for Unlayer editor (no SSR)
 const EmailEditor = dynamic(() => import("react-email-editor"), { ssr: false });
@@ -50,12 +51,13 @@ const TemplateEditorComponent = () => {
   });
 
   // Fetch templates on mount
-  useEffect(() => {
+  useEffect(() => {    
     const fetchTemplates = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/templates", {
+        const res = await fetch("http://localhost:8080/api/templates", {
           headers: { "Content-Type": "application/json" },
         });
+        
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         const data: Template[] = await res.json();
         console.log("Templates fetched:", data);
@@ -102,7 +104,7 @@ const TemplateEditorComponent = () => {
 
     setIsFetching(true);
     try {
-      const res = await fetch(`http://localhost:8082/api/templates/${selectedTemplateId}`, {
+      const res = await fetch(`http://localhost:8080/api/templates/${selectedTemplateId}`, {
         headers: { Accept: "application/json" },
       });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -186,7 +188,7 @@ const TemplateEditorComponent = () => {
         link.click();
         URL.revokeObjectURL(url);
 
-        const res = await fetch("http://localhost:8082/api/templates", {
+        const res = await fetch("http://localhost:8080/api/templates", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, design }),
@@ -218,7 +220,7 @@ const TemplateEditorComponent = () => {
 
     try {
       editorRef.current?.editor?.exportHtml(async ({ design }: { design: Design }) => {
-        const res = await fetch(`http://localhost:8082/api/templates/${selectedTemplateId}`, {
+        const res = await fetch(`http://localhost:8080/api/templates/${selectedTemplateId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, design }),
@@ -247,7 +249,7 @@ const TemplateEditorComponent = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:8082/api/templates/${selectedTemplateId}`, {
+      const res = await fetch(`http://localhost:8080/api/templates/${selectedTemplateId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);

@@ -16,7 +16,7 @@ public class WebClientConfig {
 
     @Bean
     public WebClient emailListWebClient() {
-        return webClientBuilder().baseUrl("http://email_list/api").build();
+        return webClientBuilder().baseUrl("http://apigateway/api").build();
     }
 
 }
